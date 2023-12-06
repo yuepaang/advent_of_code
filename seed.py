@@ -1,7 +1,5 @@
-from collections import defaultdict
-
-with open("./seed_input.txt", "r") as f:
-# with open("./test.txt", "r") as f:
+# with open("./seed_input.txt", "r") as f:
+with open("./test.txt", "r") as f:
     lines = f.readlines()
 
 # seeds = []
@@ -127,7 +125,34 @@ with open("./seed_input.txt", "r") as f:
 # locations = [get_location(seed) for seed in seeds]
 # print(min(locations))
 
+
 # PART TWO
+def get_ranges(seed_num, input_ranges, o, d, step):
+    res = [[] for _ in range(seed_num)]
+    for i in range(seed_num):
+        for r in input_ranges[i]:
+            if r[1] < o:
+                continue
+            elif r[0] > o + step - 1:
+                continue
+            elif o <= r[0] and r[1] < o + step:
+                res[i].append((d + r[0] - o, d + r[1] - o))
+            elif o <= r[0]:
+                res[i].append((d + r[0] - o, d + step - 1))
+                l1 = step - r[0] - 1 + o
+                res[i].append((r[0] + l1, r[1]))
+            elif r[1] < o + step:
+                res[i].append((r[0], o - 1))
+                res[i].append((d, d + r[1] - o + 1))
+
+        if len(res[i]) == 0:
+            res[i].append((r[0], r[1]))
+    print(o, step, d)
+    print(res)
+    print("-----------")
+    return res
+
+
 m1, m2, m3, m4, m5, m6, m7 = False, False, False, False, False, False, False
 new_seeds = []
 for i, line in enumerate(lines):
@@ -143,22 +168,9 @@ for i, line in enumerate(lines):
         for n_pair in range(len(seeds) // 2):
             start_seed = seeds[2 * n_pair]
             seed_num = seeds[2 * n_pair + 1]
-            new_seeds.append((start_seed, seed_num))
-        print(new_seeds)
+            new_seeds.append([(start_seed, start_seed + seed_num - 1)])
+        print("origin", new_seeds)
     elif line == "":
-        if m1:
-            pass
-        if m2:
-            pass
-        if m3:
-            pass
-        if m4:
-            pass
-        if m5:
-            pass
-        if m6:
-            pass
-
         m1, m2, m3, m4, m5, m6, m7 = False, False, False, False, False, False, False
         continue
     elif line.startswith("seed-to-soil"):
@@ -186,46 +198,25 @@ for i, line in enumerate(lines):
     # overwrite mappings
     if m1:
         d, o, step = [int(s) for s in line.split(" ")]
-        print(line)
-        soils = []
-        for seed in new_seeds:
-            if o <= seed < o + step:
-                delta = seed - o
-                seed_to_soil[seed] = d + delta
-        raise Exception
+        new_seeds = get_ranges(len(new_seeds), new_seeds, o, d, step)
+        print(new_seeds)
     elif m2:
         d, o, step = [int(s) for s in line.split(" ")]
-        for soil in seed_to_soil.values():
-            if o <= soil < o + step:
-                delta = soil - o
-                soil_to_fertilizer[soil] = d + delta
+        new_seeds = get_ranges(len(new_seeds), new_seeds, o, d, step)
     elif m3:
         d, o, step = [int(s) for s in line.split(" ")]
-        for f in soil_to_fertilizer.values():
-            if o <= f < o + step:
-                delta = f - o
-                fertilizer_to_water[f] = d + delta
+        new_seeds = get_ranges(len(new_seeds), new_seeds, o, d, step)
     elif m4:
         d, o, step = [int(s) for s in line.split(" ")]
-        for w in fertilizer_to_water.values():
-            if o <= w < o + step:
-                delta = w - o
-                water_to_light[w] = d + delta
+        new_seeds = get_ranges(len(new_seeds), new_seeds, o, d, step)
     elif m5:
         d, o, step = [int(s) for s in line.split(" ")]
-        for li in water_to_light.values():
-            if o <= li < o + step:
-                delta = li - o
-                light_to_temperature[li] = d + delta
+        new_seeds = get_ranges(len(new_seeds), new_seeds, o, d, step)
     elif m6:
         d, o, step = [int(s) for s in line.split(" ")]
-        for t in light_to_temperature.values():
-            if o <= t < o + step:
-                delta = t - o
-                temperature_to_humidity[t] = d + delta
+        new_seeds = get_ranges(len(new_seeds), new_seeds, o, d, step)
     elif m7:
         d, o, step = [int(s) for s in line.split(" ")]
-        for h in temperature_to_humidity.values():
-            if o <= h < o + step:
-                delta = h - o
-                humidity_to_location[h] = d + delta
+        new_seeds = get_ranges(len(new_seeds), new_seeds, o, d, step)
+
+print(new_seeds)

@@ -1,4 +1,5 @@
 import re
+import math
 
 with open("./wait_input.txt", "r") as f:
     # with open("./test.txt", "r") as f:
@@ -27,6 +28,13 @@ total = 1
 for race_idx in range(race_cnt):
     t = time_list[race_idx]
     dist = dist_list[race_idx]
+    x0 = (t - math.sqrt(t**2 - 4 * dist)) / 2
+    x1 = (t + math.sqrt(t**2 - 4 * dist)) / 2
+    print(x0, x1)
+    res = int(x1) - math.ceil(x0) + 1
+    print(res)
+    raise Exception
+
     left, right = 0, t // 2
     while left < right:
         mid = (left + right) // 2

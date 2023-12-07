@@ -1,6 +1,10 @@
-# with open("./seed_input.txt", "r") as f:
-with open("./test.txt", "r") as f:
+from dataclasses import dataclass
+
+with open("./seed_input.txt", "r") as f:
+    # with open("./test2.txt", "r") as f:
     lines = f.readlines()
+
+lines.append("stop")
 
 # seeds = []
 # seed_to_soil = dict()
@@ -125,39 +129,61 @@ with open("./test.txt", "r") as f:
 # locations = [get_location(seed) for seed in seeds]
 # print(min(locations))
 
-
 # PART TWO
-def get_ranges(seed_num, input_ranges, o, d, step):
+@dataclass
+class VecRange:
+    start: int
+    length: int
+
+
+def convert(source, o, d, step):
+    if o <= source < o + step:
+        return source - o + d
+    return -1
+
+
+def get_ranges(seed_num, input_ranges, mappings):
+    if len(mappings) == 0:
+        return input_ranges
     res = [[] for _ in range(seed_num)]
     for i in range(seed_num):
-        for r in input_ranges[i]:
-            if r[1] < o:
-                continue
-            elif r[0] > o + step - 1:
-                continue
-            elif o <= r[0] and r[1] < o + step:
-                res[i].append((d + r[0] - o, d + r[1] - o))
-            elif o <= r[0]:
-                res[i].append((d + r[0] - o, d + step - 1))
-                l1 = step - r[0] - 1 + o
-                res[i].append((r[0] + l1, r[1]))
-            elif r[1] < o + step:
-                res[i].append((r[0], o - 1))
-                res[i].append((d, d + r[1] - o + 1))
+        for vr in input_ranges[i]:
+            # print(vr, o, d, step)
+            # vec range -> Vec<VecRange>
+            slice = []
+            range_end = vr.start + vr.length
+            for o, d, step in mappings:
+                source_end = o + step
+                if range_end < o or vr.start > source_end:
+                    continue
 
-        if len(res[i]) == 0:
-            res[i].append((r[0], r[1]))
-    print(o, step, d)
-    print(res)
-    print("-----------")
+                if vr.start < o:
+                    if o not in slice:
+                        slice.append(o)
+                if source_end < range_end:
+                    if source_end not in slice:
+                        slice.append(source_end)
+
+            if range_end not in slice:
+                slice.append(range_end)
+            current = vr.start
+            for pos in slice:
+                target_start = -1
+                for o, d, step in mappings:
+                    if target_start == -1:
+                        target_start = convert(current, o, d, step)
+                if target_start != -1:
+                    res[i].append(VecRange(target_start, pos - current))
+                else:
+                    res[i].append(VecRange(current, pos - current))
+                current = pos
     return res
 
 
-m1, m2, m3, m4, m5, m6, m7 = False, False, False, False, False, False, False
 new_seeds = []
+mappings = []
 for i, line in enumerate(lines):
     line = line.strip()
-    # print(line)
     # some initializations
     if i == 0:
         line = line.split(": ")[1]
@@ -168,55 +194,26 @@ for i, line in enumerate(lines):
         for n_pair in range(len(seeds) // 2):
             start_seed = seeds[2 * n_pair]
             seed_num = seeds[2 * n_pair + 1]
-            new_seeds.append([(start_seed, start_seed + seed_num - 1)])
+            new_seeds.append([VecRange(start_seed, seed_num)])
         print("origin", new_seeds)
     elif line == "":
-        m1, m2, m3, m4, m5, m6, m7 = False, False, False, False, False, False, False
         continue
-    elif line.startswith("seed-to-soil"):
-        m1 = True
+    elif not line[0].isdigit():
+        # print(mappings)
+        new_seeds = get_ranges(len(new_seeds), new_seeds, mappings)
+        # print("mapping", new_seeds)
+        # print()
+        mappings = []
         continue
-    elif line.startswith("soil-to-fertilizer"):
-        m2 = True
-        continue
-    elif line.startswith("fertilizer-to-water"):
-        m3 = True
-        continue
-    elif line.startswith("water-to-light"):
-        m4 = True
-        continue
-    elif line.startswith("light-to-temperature"):
-        m5 = True
-        continue
-    elif line.startswith("temperature-to-humidity"):
-        m6 = True
-        continue
-    elif line.startswith("humidity-to-location"):
-        m7 = True
-        continue
+    else:
+        d, o, step = [int(s) for s in line.split(" ")]
+        mappings.append((o, d, step))
 
-    # overwrite mappings
-    if m1:
-        d, o, step = [int(s) for s in line.split(" ")]
-        new_seeds = get_ranges(len(new_seeds), new_seeds, o, d, step)
-        print(new_seeds)
-    elif m2:
-        d, o, step = [int(s) for s in line.split(" ")]
-        new_seeds = get_ranges(len(new_seeds), new_seeds, o, d, step)
-    elif m3:
-        d, o, step = [int(s) for s in line.split(" ")]
-        new_seeds = get_ranges(len(new_seeds), new_seeds, o, d, step)
-    elif m4:
-        d, o, step = [int(s) for s in line.split(" ")]
-        new_seeds = get_ranges(len(new_seeds), new_seeds, o, d, step)
-    elif m5:
-        d, o, step = [int(s) for s in line.split(" ")]
-        new_seeds = get_ranges(len(new_seeds), new_seeds, o, d, step)
-    elif m6:
-        d, o, step = [int(s) for s in line.split(" ")]
-        new_seeds = get_ranges(len(new_seeds), new_seeds, o, d, step)
-    elif m7:
-        d, o, step = [int(s) for s in line.split(" ")]
-        new_seeds = get_ranges(len(new_seeds), new_seeds, o, d, step)
-
-print(new_seeds)
+# print(new_seeds)
+min_loc = float("inf")
+for seed in new_seeds:
+    for r in seed:
+        if r.start < min_loc:
+            # print(r)
+            min_loc = r.start
+print(min_loc)

@@ -1,5 +1,7 @@
 from functools import cmp_to_key
+from collections import Counter
 
+# with open("./day7.txt", "r") as f:
 with open("./camel_input.txt", "r") as f:
     # with open("./test.txt", "r") as f:
     lines = f.readlines()
@@ -249,6 +251,26 @@ def compare(x, y):
                 return -1
 
 
+# PART two (separate card type and card rank)
+wild_card_rank = {n: len(num) - i if n != "J" else 0 for i, n in enumerate(num)}
+hand_types = {
+    (6, "5K"): lambda cs: len(cs) == 1,
+    (5, "4K"): lambda cs: any(v == 4 for v in cs.values()),
+    (4, "FH"): lambda cs: len(cs) == 2,
+    (3, "3K"): lambda cs: any(v == 3 for v in cs.values()),
+    (2, "2P"): lambda cs: len([v for v in cs.values() if v == 2]) == 2,
+    (1, "1P"): lambda cs: len([v for v in cs.values() if v == 2]) == 1,
+    (0, "HC"): lambda cs: True,
+}
+
+
+def check_hand_simple(cardset):
+    cards = cardset[1]
+    for hand, func in hand_types.items():
+        if func(cards):
+            return (cardset, hand)
+
+
 card_list = []
 card_counter = []
 score_list = []
@@ -262,8 +284,81 @@ for line in lines:
 rank_list = [
     (score_list[i], counter, card_list[i]) for i, counter in enumerate(card_counter)
 ]
-rank_list = sorted(rank_list, key=cmp_to_key(compare))
-print(rank_list)
+
+# PART ONE
+# rank_list = sorted(rank_list, key=cmp_to_key(compare))
+# print(rank_list)
+
+
+def new_compare(x, y):
+    x_use_wild = False
+    _, ori_x_best_hand = check_hand_simple(x)
+    if "J" in x[1]:
+        x_best_hand = (0, "HC")
+        for card in set(x[2]) - set("J"):
+            copy = x[2].replace("J", card)
+            _, hand = check_hand_simple((x[0], Counter(copy), x[2]))
+            x_best_hand = max(x_best_hand, hand)
+        if x_best_hand < ori_x_best_hand:
+            x_best_hand = ori_x_best_hand
+        x_use_wild = True
+    else:
+        x_best_hand = ori_x_best_hand
+
+    y_use_wild = False
+    _, ori_y_best_hand = check_hand_simple(y)
+    if "J" in y[1]:
+        y_best_hand = (0, "HC")
+        for card in set(y[2]) - set("J"):
+            copy = y[2].replace("J", card)
+            _, hand = check_hand_simple((y[0], Counter(copy), y[2]))
+            y_best_hand = max(y_best_hand, hand)
+
+        if y_best_hand < ori_y_best_hand:
+            y_best_hand = ori_y_best_hand
+        y_use_wild = True
+    else:
+        y_best_hand = ori_y_best_hand
+
+    if x_best_hand > y_best_hand:
+        return 1
+    elif x_best_hand < y_best_hand:
+        return -1
+    else:
+        for i in range(5):
+            if not x_use_wild and not y_use_wild:
+                if card_rank[x[2][i]] > card_rank[y[2][i]]:
+                    return 1
+                elif card_rank[x[2][i]] < card_rank[y[2][i]]:
+                    return -1
+            elif x_use_wild and not y_use_wild:
+                if wild_card_rank[x[2][i]] > card_rank[y[2][i]]:
+                    return 1
+                elif wild_card_rank[x[2][i]] < card_rank[y[2][i]]:
+                    return -1
+            elif not x_use_wild and y_use_wild:
+                if card_rank[x[2][i]] > wild_card_rank[y[2][i]]:
+                    return 1
+                elif card_rank[x[2][i]] < wild_card_rank[y[2][i]]:
+                    return -1
+            else:
+                if wild_card_rank[x[2][i]] > wild_card_rank[y[2][i]]:
+                    return 1
+                elif wild_card_rank[x[2][i]] < wild_card_rank[y[2][i]]:
+                    return -1
+
+
+rank_list = sorted(rank_list, key=cmp_to_key(new_compare))
+
+# with open("./day7_sorted.txt", "r") as f:
+#     lines = f.readlines()
+# for i, line in enumerate(lines):
+#     line = line.strip()
+#     if line != rank_list[i][2]:
+#         print(i)
+#         print(line, rank_list[i][2])
+#         print(lines[i + 1], rank_list[i + 1][2])
+#         raise Exception
 
 total = 0
 for i, t in enumerate(rank_list):

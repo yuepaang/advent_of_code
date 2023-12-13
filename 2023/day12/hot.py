@@ -1,5 +1,5 @@
 import string
-import re
+from functools import cache
 
 from math import comb
 from itertools import combinations
@@ -123,6 +123,31 @@ def available_spring(sep, quantity):
     return True
 
 
+@cache
+def find_solutions(springs, quantity, group_size=0):
+    # Dynamic programming solution using the cache to significantly speed up the processing
+    # Run through each item in the string, if it's a question mark, try all options replacing each with either . or #
+    # If the replacement results in a successful line, return one and continue
+    if (
+        not springs
+    ):  # Return 1 if there are no more group sizes and there is no current group
+        return not quantity and not group_size
+    num_solutions = 0
+    symbol = [".", "#"] if springs[0] == "?" else springs[0]
+    for sym in symbol:
+        if sym == "#":  # If it's # expand the group
+            num_solutions += find_solutions(springs[1:], quantity, group_size + 1)
+        else:
+            if (
+                group_size
+            ):  # If the . is at the end of a group and it matches the first size, continue
+                if quantity and quantity[0] == group_size:
+                    num_solutions += find_solutions(springs[1:], quantity[1:])
+            else:  # If the . is at the end of a group and it doesn't match the first size, continue without removing a group
+                num_solutions += find_solutions(springs[1:], quantity)
+    return num_solutions
+
+
 total = 0
 for line in lines:
     line = line.strip()
@@ -138,18 +163,21 @@ for line in lines:
     # sep = [s for s in springs.split(".") if s != ""]
     # print(springs)
     # print(quantity)
-    one_cnt = 0
-    group_cache = set()
-    format_cache = dict()
-    print(springs)
-    print(quantity)
-    for sep in get_sep(springs, len(quantity), group_cache, format_cache):
-        print(sep)
-        # one_cnt += dig_unknown_spring(sep, quantity)
-        one_cnt += 1
-    print("count: ", one_cnt)
-    print("-----------")
-    total += one_cnt
+    # one_cnt = 0
+    # group_cache = set()
+    # format_cache = dict()
+    # print(springs)
+    # print(quantity)
+    # for sep in get_sep(springs, len(quantity), group_cache, format_cache):
+    #     print(sep)
+    #     # one_cnt += dig_unknown_spring(sep, quantity)
+    #     one_cnt += 1
+    # print("count: ", one_cnt)
+    # print("-----------")
+    # total += one_cnt
+
+    # one_cnt = find_solutions(springs + ".", tuple(quantity))
+    one_cnt = find_solutions(("?".join([springs] * 5)) + ".", tuple(quantity * 5))
 
     # part one
     # one_cnt = 0
@@ -163,7 +191,7 @@ for line in lines:
     #             break
     #     if all_equal:
     #         one_cnt += 1
-    # print("count: ", one_cnt)
-    # print("-----------")
-    # total += one_cnt
+    print("count: ", one_cnt)
+    print("-----------")
+    total += one_cnt
 print(total)

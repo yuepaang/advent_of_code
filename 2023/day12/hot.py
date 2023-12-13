@@ -48,13 +48,10 @@ def get_all(springs, quantity_len):
                 new_spring = new_spring.replace("?", ".")
                 sep = [s for s in new_spring.split(".") if s != ""]
                 if len(sep) == quantity_len:
-                    # print(springs)
-                    # print(new_spring)
-                    # print("------")
                     yield sep
 
 
-def get_sep(springs, quantity_len):
+def get_sep(springs, quantity_len, group_cache, format_cache):
     possible_idx = []
     for i, c in enumerate(springs):
         if c == "?":
@@ -73,25 +70,46 @@ def get_sep(springs, quantity_len):
             new_spring = "".join(new_spring)
             sep = [s for s in new_spring.split(".") if s != ""]
             if len(sep) == quantity_len:
+                sep_len = [len(s) for s in sep]
+                skip = any([s < q for s, q in zip(sep_len, quantity)])
+                if skip:
+                    continue
+                replace_idx = []
                 for i, s in enumerate(sep):
                     if count_spring(s) == quantity[i]:
-                        sep[i] = sep[i].replace("?", "")
-                    if "#" in sep[i] and len(re.findall("\\?+", sep[i])) > 1:
-                        it = re.finditer("\\?+", sep[i])
-                        for t in it:
-                            sep[i] = sep[i].replace(t.group(), "?")
-                yield sep
+                        replace_idx.append(i)
+                for idx in replace_idx:
+                    sep[idx] = sep[idx].replace("?", "")
+
+                has_same_format = False
+                for i, s in enumerate(sep):
+                    if "#" not in s:
+                        continue
+                    if i in format_cache and s in format_cache[i]:
+                        has_same_format = True and has_same_format
+                    else:
+                        has_same_format = False and has_same_format
+
+                    if i not in format_cache:
+                        format_cache[i] = set()
+                    if s not in format_cache[i]:
+                        format_cache[i].add(s)
+                if has_same_format:
+                    continue
+
+                key = "&".join([str(len(s)) for s in sep])
+                if key not in group_cache:
+                    group_cache.add(key)
+                    yield sep
 
 
 def dig_unknown_spring(sep, quantity):
     total = 1
     if len(sep) == len(quantity):
         for i in range(len(sep)):
-            sprint_cnt = count_spring(sep[i])
-            if sprint_cnt == quantity[i]:
-                continue
-            elif sprint_cnt < quantity[i]:
-                total *= comb(len(sep[i]) - sprint_cnt, quantity[i] - sprint_cnt)
+            spring_cnt = count_spring(sep[i])
+            if spring_cnt < quantity[i]:
+                total *= comb(len(sep[i]) - spring_cnt, quantity[i] - spring_cnt)
     return total
 
 
@@ -120,28 +138,32 @@ for line in lines:
     # sep = [s for s in springs.split(".") if s != ""]
     # print(springs)
     # print(quantity)
-    # one_cnt = 0
-    # cache = set()
-    # for sep in get_sep(springs, len(quantity)):
-    #     if available_spring(sep, quantity):
-    #         if "&".join(sep) not in cache:
-    #             print(sep)
-    #         cache.add("&".join(sep))
-    # one_cnt += len(cache)
-    # total += one_cnt
-
     one_cnt = 0
-    for sep in get_all(springs, len(quantity)):
-        all_equal = True
-        if len(sep) != len(quantity):
-            raise Exception
-        for i, s in enumerate(sep):
-            if count_spring(s) != quantity[i]:
-                all_equal = False
-                break
-        if all_equal:
-            one_cnt += 1
+    group_cache = set()
+    format_cache = dict()
+    print(springs)
+    print(quantity)
+    for sep in get_sep(springs, len(quantity), group_cache, format_cache):
+        print(sep)
+        # one_cnt += dig_unknown_spring(sep, quantity)
+        one_cnt += 1
+    print("count: ", one_cnt)
+    print("-----------")
+    total += one_cnt
+
+    # part one
+    # one_cnt = 0
+    # for sep in get_all(springs, len(quantity)):
+    #     all_equal = True
+    #     if len(sep) != len(quantity):
+    #         raise Exception
+    #     for i, s in enumerate(sep):
+    #         if count_spring(s) != quantity[i]:
+    #             all_equal = False
+    #             break
+    #     if all_equal:
+    #         one_cnt += 1
     # print("count: ", one_cnt)
     # print("-----------")
-    total += one_cnt
+    # total += one_cnt
 print(total)

@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 
+import numpy as np
 
-# with open("./odds_input.txt", "r") as f:
-with open("./test.txt", "r") as f:
+
+with open("./odds_input.txt", "r") as f:
+    # with open("./test.txt", "r") as f:
     lines = f.readlines()
 
 
@@ -24,7 +26,7 @@ for line in lines:
     vx, vy, vz = v.split(", ")
     hailstones.append(Hailstone(int(px), int(py), int(pz), int(vx), int(vy), int(vz)))
 
-print(hailstones)
+# print(hailstones)
 
 
 def extract_line(hailstone):
@@ -106,119 +108,78 @@ def extract_plane(hailstone):
 # print(total)
 
 # Part two
-for t in range(999):
-    x_range = []
-    for hailstone in hailstones:
-        print(extract_plane(hailstone))
+# t_i*v_i + d_i = t_i*v_rock + d_rock
+# t_i*(v_i - v_rock) = d_rock - d_i
+# (v_i - v_rock) x (d_rock - d_i) = 0
+coef = [
+    [
+        hailstones[1].vy - hailstones[0].vy,
+        hailstones[0].vx - hailstones[1].vx,
+        0,
+        hailstones[0].y - hailstones[1].y,
+        hailstones[1].x - hailstones[0].x,
+        0,
+    ],
+    [
+        hailstones[2].vy - hailstones[0].vy,
+        hailstones[0].vx - hailstones[2].vx,
+        0,
+        hailstones[0].y - hailstones[2].y,
+        hailstones[2].x - hailstones[0].x,
+        0,
+    ],
+    [
+        hailstones[1].vz - hailstones[0].vz,
+        0,
+        hailstones[0].vx - hailstones[1].vx,
+        hailstones[0].z - hailstones[1].z,
+        0,
+        hailstones[1].x - hailstones[0].x,
+    ],
+    [
+        hailstones[2].vz - hailstones[0].vz,
+        0,
+        hailstones[0].vx - hailstones[2].vx,
+        hailstones[0].z - hailstones[2].z,
+        0,
+        hailstones[2].x - hailstones[0].x,
+    ],
+    [
+        0,
+        hailstones[1].vz - hailstones[0].vz,
+        hailstones[0].vy - hailstones[1].vy,
+        0,
+        hailstones[0].z - hailstones[1].z,
+        hailstones[1].y - hailstones[0].y,
+    ],
+    [
+        0,
+        hailstones[2].vz - hailstones[0].vz,
+        hailstones[0].vy - hailstones[2].vy,
+        0,
+        hailstones[0].z - hailstones[2].z,
+        hailstones[2].y - hailstones[0].y,
+    ],
+]
 
-# from ortools.linear_solver import pywraplp
-#
-# # Create the solver, specifying the underlying solver to use.
-# # Here we use SCIP, which is one of the solvers included with OR-Tools.
-# solver = pywraplp.Solver.CreateSolver("SCIP")
-#
-# # Check if the solver is available before proceeding
-# if not solver:
-#     print("SCIP solver unavailable.")
-#     exit(1)
-#
-# # Create the variables x and y.
-# x = solver.IntVar(-solver.infinity(), solver.infinity(), "x")
-# y = solver.IntVar(-solver.infinity(), solver.infinity(), "y")
-# z = solver.IntVar(-solver.infinity(), solver.infinity(), "z")
-# vx = solver.IntVar(-solver.infinity(), solver.infinity(), "vx")
-# vy = solver.IntVar(-solver.infinity(), solver.infinity(), "vy")
-# vz = solver.IntVar(-solver.infinity(), solver.infinity(), "vz")
-# t = solver.IntVar(-solver.infinity(), solver.infinity(), "t")
-#
-# # Define the constraints.
-# for i, hailstone in enumerate(hailstones):
-#     solver.Add(
-#         x + y + z + t * (vx + vy + vz)
-#         == (hailstone.x + hailstone.y + hailstone.z)
-#         + t * (hailstone.vx + hailstone.vy + hailstone.vz)
-#     )
-#     # solver.Add(vx + vy + vz == (hailstone.vx + hailstone.vy + hailstone.vz))
-#     if hailstone.vx > 0:
-#         solver.Add(x >= hailstone.x)
-#     else:
-#         solver.Add(x <= hailstone.x)
-#
-#     if hailstone.vy > 0:
-#         solver.Add(y >= hailstone.y)
-#     else:
-#         solver.Add(y <= hailstone.y)
-#
-#     if hailstone.vz > 0:
-#         solver.Add(z >= hailstone.z)
-#     else:
-#         solver.Add(z <= hailstone.z)
-#
-# # Define the objective function.
-# # solver.Minimize(t)
-#
-# # Solve the problem and print the solution.
-# status = solver.Solve()
-#
-# if status == pywraplp.Solver.OPTIMAL:
-#     print("Solution:")
-#     print("Objective value =", solver.Objective().Value())
-#     print("x =", x.solution_value())
-#     print("y =", y.solution_value())
-#     print("z =", z.solution_value())
-# elif status == pywraplp.Solver.FEASIBLE:
-#     print("A potentially suboptimal solution was found.")
-# else:
-#     print("The problem does not have an optimal solution.")
-
-# from gurobipy import GRB, Model
-#
-# # 创建模型
-# m = Model("equation_solver")
-#
-# # 添加变量
-# a = m.addVar(vtype=GRB.INTEGER, name="a")
-# b = m.addVar(vtype=GRB.INTEGER, name="b")
-# c = m.addVar(vtype=GRB.INTEGER, name="c")
-# va = m.addVar(vtype=GRB.INTEGER, name="va")
-# vb = m.addVar(vtype=GRB.INTEGER, name="vb")
-# vc = m.addVar(vtype=GRB.INTEGER, name="vc")
-# # ... 为其他变量重复添加变量 ...
-#
-# # 添加约束
-# for i, hailstone in enumerate(hailstones):
-#     m.addConstr(
-#         a + b + c == (hailstone.x + hailstone.y + hailstone.z), f"constraint {i}"
-#     )
-#     m.addConstr(
-#         va + vb + vc == (hailstone.vx + hailstone.vy + hailstone.vz), f"constraint v{i}"
-#     )
-#     if hailstone.vx > 0:
-#         m.addConstr(a > hailstone.x, f"constraint x{i}")
-#     else:
-#         m.addConstr(a <= hailstone.x, f"constraint x{i}")
-#
-#     if hailstone.vy > 0:
-#         m.addConstr(b > hailstone.y, f"constraint y{i}")
-#     else:
-#         m.addConstr(b <= hailstone.y, f"constraint y{i}")
-#
-#     if hailstone.vz > 0:
-#         m.addConstr(c > hailstone.z, f"constraint z{i}")
-#     else:
-#         m.addConstr(c <= hailstone.z, f"constraint z{i}")
-# # ... 为其他方程重复添加约束 ...
-#
-# # 定义目标函数（如果需要最小化或最大化某些表达式）
-# # 这里我们没有具体的目标函数，因为我们只是寻找满足条件的解
-#
-# # 进行优化
-# m.optimize()
-#
-# # 输出解
-# if m.status == GRB.OPTIMAL:
-#     print("Optimal solution found:")
-#     for v in m.getVars():
-#         print("%s = %g" % (v.varName, v.x))
-# else:
-#     print("No optimal solution found")
+A = np.array(coef)
+print(A)
+b = np.array(
+    [
+        (hailstones[0].y * hailstones[0].vx - hailstones[1].y * hailstones[1].vx)
+        - (hailstones[0].x * hailstones[0].vy - hailstones[1].x * hailstones[1].vy),
+        (hailstones[0].y * hailstones[0].vx - hailstones[2].y * hailstones[2].vx)
+        - (hailstones[0].x * hailstones[0].vy - hailstones[2].x * hailstones[2].vy),
+        (hailstones[0].z * hailstones[0].vx - hailstones[1].z * hailstones[1].vx)
+        - (hailstones[0].x * hailstones[0].vz - hailstones[1].x * hailstones[1].vz),
+        (hailstones[0].z * hailstones[0].vx - hailstones[2].z * hailstones[2].vx)
+        - (hailstones[0].x * hailstones[0].vz - hailstones[2].x * hailstones[2].vz),
+        (hailstones[0].z * hailstones[0].vy - hailstones[1].z * hailstones[1].vy)
+        - (hailstones[0].y * hailstones[0].vz - hailstones[1].y * hailstones[1].vz),
+        (hailstones[0].z * hailstones[0].vy - hailstones[2].z * hailstones[2].vy)
+        - (hailstones[0].y * hailstones[0].vz - hailstones[2].y * hailstones[2].vz),
+    ]
+)
+print(b)
+x = np.linalg.solve(A, b)
+print(int(sum(x[:3])))

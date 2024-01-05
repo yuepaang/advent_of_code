@@ -61,7 +61,6 @@ def shortest_path(graph, check_function, max_straight=4):
     dist = {
         (i, j): defaultdict(lambda: float("inf")) for i in range(n) for j in range(n)
     }
-    # dist[0][0] = 0
     pq = [
         (0, 0, 0, (0, 0), 1, [])
     ]  # (distance, row, col, last direction, last direction move count, Path)
@@ -80,7 +79,6 @@ def shortest_path(graph, check_function, max_straight=4):
             if 0 <= new_r < n and 0 <= new_c < n:
                 new_dist = d + graph[new_r][new_c]
                 if new_dist < dist[(new_r, new_c)][(dr, dc, new_num)]:
-                    # dist[new_r][new_c] = new_dist
                     dist[(new_r, new_c)][(dr, dc, new_num)] = new_dist
                     heappush(
                         pq,

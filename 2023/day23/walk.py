@@ -77,7 +77,7 @@ from collections import deque
 with open("./walk_input.txt", "r") as f:
     lines = f.readlines()
 
-graph = [[0 for _ in range(len(lines[i]) - 1)] for i in range(len(lines))]
+graph = [["" for _ in range(len(lines[i]) - 1)] for i in range(len(lines))]
 
 start = (0, 0)
 for i, line in enumerate(lines):
@@ -145,7 +145,7 @@ while queue:
             x + dx >= 0
             and x + dx < len(graph)
             and y + dy >= 0
-            and y + dy < len(graph[i])
+            and y + dy < len(graph[0])
             and graph[x + dx][y + dy] != "#"
             and (x + dx, y + dy) not in visited
             and dp[x + dx][y + dy] < cur_dist + 1
